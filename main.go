@@ -78,7 +78,7 @@ var bytesCopyBegin = []byte("COPY ")
 var bytesCopyEnd = []byte("\\.\n")
 var bytesNewline = []byte("\n")
 
-const copySyntaxDelimiters = " \n'\"(),;"
+const copySyntaxDelimiters = " \n'(),;"
 
 func process(config *Configuration, input *bufio.Reader, output io.Writer) error {
 	target := Target{}
@@ -122,7 +122,22 @@ func process(config *Configuration, input *bufio.Reader, output io.Writer) error
 				if len(tokens) < 4 {
 					return errors.New("process: parse error: too few tokens in COPY statement: " + string(line))
 				}
+
 				target.Table = tokens[1]
+				s := strings.Split(target.Table, ".")
+				if len(s[1]) > 0 && s[1][0] == '"' {
+					s[1] = s[1][1:]
+				}
+				if len(s[1]) > 0 && s[1][len(s[1])-1] == '"' {
+					s[1] = s[1][:len(s[1])-1]
+				}
+				if len(s[0]) > 0 && s[0][0] == '"' {
+					s[0] = s[0][1:]
+				}
+				if len(s[0]) > 0 && s[0][len(s[0])-1] == '"' {
+					s[0] = s[0][:len(s[0])-1]
+				}
+				target.Table = strings.Join([]string{s[0], s[1]}, ".")
 				columns = tokens[2 : len(tokens)-2]
 			}
 		case parseStateCopy:
